@@ -45,11 +45,41 @@ Vue.component('app', require('./App.vue').default);
  * or customize the JavaScript scaffolding to fit your unique needs.
  */
 
-
 const router = new VueRouter({
     routes,
     mode: 'history'
 });
+
+function loggedIn(){
+    return localStorage.getItem('token')
+}
+
+router.beforeEach((to, from, next) => {
+    if (to.matched.some(record => record.meta.requiresAuth)) {
+        // this route requires auth, check if logged in
+        // if not, redirect to login page.
+        if (!loggedIn()) {
+            next({
+                path: '/login',
+                query: { redirect: to.fullPath }
+            })
+        } else {
+            next()
+        }
+    } else if(to.matched.some(record => record.meta.guest)) {
+        if (loggedIn()) {
+            next({
+                path: '/',
+                query: { redirect: to.fullPath }
+            })
+        } else {
+            next()
+        }
+    } else {
+        next() // make sure to always call next()!
+    }
+})
+
 
 const app = new Vue({
     el: '#app',

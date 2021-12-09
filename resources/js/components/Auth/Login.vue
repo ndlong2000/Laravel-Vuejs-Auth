@@ -36,18 +36,17 @@ export default {
             user : {
                 email : '',
                 password : '',
+                device_name: 'browser'
             },
             error: null,
-            //success: false,
         }
     },
     methods : {
         async login() {
             try {
-                console.log(this.user)
                 await axios.post('api/login', this.user)
                     .then(response => {
-                        this.success = true
+                        localStorage.setItem('token', response.data)
                         this.$router.push('home')
                     })
             } catch (error) {

@@ -5486,10 +5486,10 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
     return {
       user: {
         email: '',
-        password: ''
+        password: '',
+        device_name: 'browser'
       },
-      error: null //success: false,
-
+      error: null
     };
   },
   methods: {
@@ -5502,30 +5502,29 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
             switch (_context.prev = _context.next) {
               case 0:
                 _context.prev = 0;
-                console.log(_this.user);
-                _context.next = 4;
+                _context.next = 3;
                 return axios.post('api/login', _this.user).then(function (response) {
-                  _this.success = true;
+                  localStorage.setItem('token', response.data);
 
                   _this.$router.push('home');
                 });
 
-              case 4:
-                _context.next = 10;
+              case 3:
+                _context.next = 9;
                 break;
 
-              case 6:
-                _context.prev = 6;
+              case 5:
+                _context.prev = 5;
                 _context.t0 = _context["catch"](0);
                 _this.error = _context.t0.response.data;
                 console.log(_this.error);
 
-              case 10:
+              case 9:
               case "end":
                 return _context.stop();
             }
           }
-        }, _callee, null, [[0, 6]]);
+        }, _callee, null, [[0, 5]]);
       }))();
     }
   }
@@ -5936,7 +5935,28 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
           }
         }, _callee, null, [[0, 5]]);
       }))();
+    },
+    logout1: function logout1() {
+      var _this2 = this;
+
+      axios.post('api/logout').then(function (response) {
+        localStorage.removeItem('token');
+
+        _this2.$router.push('/login');
+      })["catch"](function (errors) {
+        console.log(errors);
+      });
     }
+  },
+  mounted: function mounted() {
+    var _this3 = this;
+
+    window.axios.defaults.headers.common['Authorization'] = "Bearer ".concat(this.token);
+    axios.get('api/user').then(function (response) {
+      _this3.currentUser = response.data;
+    })["catch"](function (errors) {
+      console.log(errors);
+    });
   }
 });
 
@@ -6322,6 +6342,44 @@ var router = new vue_router__WEBPACK_IMPORTED_MODULE_3__["default"]({
   routes: _routes__WEBPACK_IMPORTED_MODULE_1__["default"],
   mode: 'history'
 });
+
+function loggedIn() {
+  return localStorage.getItem('token');
+}
+
+router.beforeEach(function (to, from, next) {
+  if (to.matched.some(function (record) {
+    return record.meta.requiresAuth;
+  })) {
+    // this route requires auth, check if logged in
+    // if not, redirect to login page.
+    if (!loggedIn()) {
+      next({
+        path: '/login',
+        query: {
+          redirect: to.fullPath
+        }
+      });
+    } else {
+      next();
+    }
+  } else if (to.matched.some(function (record) {
+    return record.meta.guest;
+  })) {
+    if (loggedIn()) {
+      next({
+        path: '/',
+        query: {
+          redirect: to.fullPath
+        }
+      });
+    } else {
+      next();
+    }
+  } else {
+    next(); // make sure to always call next()!
+  }
+});
 var app = new vue__WEBPACK_IMPORTED_MODULE_2__["default"]({
   el: '#app',
   render: function render(h) {
@@ -6387,16 +6445,30 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
+
+var authen = function authen(to, form, next) {
+  axios.get('/api/authenticated').then(function () {
+    next();
+  })["catch"](function () {
+    return next({
+      name: 'login'
+    });
+  });
+};
+
 var routes = [{
   path: '/home',
   component: _components_Home__WEBPACK_IMPORTED_MODULE_0__["default"],
-  name: 'home'
+  name: 'home',
+  meta: {
+    requiresAuth: true
+  }
 }, {
   path: '/register',
   component: _components_Auth_Register__WEBPACK_IMPORTED_MODULE_1__["default"],
   name: 'register',
   meta: {
-    auth: false
+    guest: true
   }
 }, {
   path: '/login',
@@ -6408,7 +6480,16 @@ var routes = [{
 }, {
   path: '/api-calling',
   component: _components_ApiCalling__WEBPACK_IMPORTED_MODULE_3__["default"],
-  name: 'api_calling'
+  name: 'api_calling',
+  beforeEnter: function beforeEnter(to, form, next) {
+    axios.get('/api/authenticated').then(function () {
+      next();
+    })["catch"](function () {
+      return next({
+        name: 'login'
+      });
+    });
+  }
 }];
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (routes);
 
@@ -32503,7 +32584,7 @@ var render = function () {
         _c("div", { staticClass: "form-group form-button" }, [
           _c(
             "button",
-            { staticClass: "form-submit", on: { click: _vm.logout } },
+            { staticClass: "form-submit", on: { click: _vm.logout1 } },
             [_vm._v("Log Out")]
           ),
         ]),

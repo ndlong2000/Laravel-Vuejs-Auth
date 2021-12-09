@@ -13,17 +13,17 @@ use Illuminate\Support\Facades\Route;
 | is assigned the "api" middleware group. Enjoy building your API!
 |
 */
-Route::middleware('auth:api')->get('/user', function (Request $request) {
+Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
+Route::middleware('auth:sanctum')->get('/authenticated', function (Request $request) {
+    return true;
+});
 
-Route::middleware('auth:api')->group(function () {
+Route::middleware('auth:sanctum')->group(function () {
     Route::resource('products', \App\Http\Controllers\ProductController::class);
 });
 
 Route::post('register', [\App\Http\Controllers\Auth\LoginController::class,'register']);
-Route::post('login', [\App\Http\Controllers\Auth\LoginController::class,'login']);
-Route::post('logout', [\App\Http\Controllers\Auth\LoginController::class,'logout']);
-//Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-//    return $request->user();
-//});
+Route::post('login', [\App\Http\Controllers\Auth\LoginController::class,'login1']);
+Route::post('logout', [\App\Http\Controllers\Auth\LoginController::class,'logout1']);

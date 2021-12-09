@@ -7,6 +7,8 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
 
 
 class LoginController extends Controller
@@ -48,14 +50,22 @@ class LoginController extends Controller
         if (!Auth::attempt($credentials)) {
             return response()->json(['errors' => 'Wrong account or password'], 401);
         }
-        $token = Auth::user()->createToken('key')->accessToken;
-        return response()->json(auth('api')->user())->header('Authorization', $token);
+        return response()->json(Auth::user(),200);
+        $user = $request->user();
+        $tokenResult = $user->createToken('Personal Access Token');
+        return response()->json([
+            'message' => 'Authorization Granted',
+            'access_token' => $tokenResult->accessToken,
+            'token_type' => 'Bearer',
+        ]);
+//        $token = Auth::user()->createToken('key')->accessToken;
+//        return response()->json(auth('api')->user())->header('Authorization', $token);
     }
     public function logout(Request $request)
     {
-//         auth('api')->logout();
-//         Auth::logout();
-        $request->user()->token()->revoke();
+        // auth('api')->logout();
+         Auth::logout();
+        //$request->user()->token()->revoke();
         return response()->json([
             'message' => 'Successfully logged out',
         ]);
@@ -69,5 +79,30 @@ class LoginController extends Controller
     public function user(Request $request)
     {
         return response()->json(auth('api')->user());
+    }
+
+    public function login1(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required',
+            'device_name' => 'required',
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+
+        if (! $user || ! Hash::check($request->password, $user->password)) {
+            throw ValidationException::withMessages([
+                'email' => ['The provided credentials are incorrect.'],
+            ]);
+        }
+
+        return $user->createToken($request->device_name)->plainTextToken;
+    }
+
+    public function logout1(Request $request)
+    {
+        //$request->user()->currentAccessToken()->delete();
+        return response()->json(['msg' => 'Logout Successfull']);
     }
 }
